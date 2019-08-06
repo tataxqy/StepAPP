@@ -18,12 +18,12 @@ public class PedometerListener implements SensorEventListener {
     //灵敏度
     private float sensitivity=30;
     //采样时间
-    private long mLimit=30;
+    private long mLimit=300;
     //最后保存的数值
     private float mLastValue;
     private float mScale=-4f;//缩放，放大值
 
-    private float offset=240;//采样数据的偏移
+    private float offset=240f;//采样数据的偏移
 
     //采样时间
     private long start=0;

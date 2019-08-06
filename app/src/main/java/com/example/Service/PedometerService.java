@@ -16,8 +16,6 @@ import com.example.beans.PedometerChartBean;
 import com.example.db.DBHelper;
 import com.example.frame.FrameApplication;
 
-import static android.app.DownloadManager.STATUS_RUNNING;
-
 public class PedometerService extends Service {
 
     private SensorManager sensorManager;
@@ -30,7 +28,7 @@ public class PedometerService extends Service {
     private Settings settings;
     private PedometerChartBean pedometerChartBean;
 
-    private static Handler handler=new Handler();
+    private static Handler handler=new Handler();//使用hanlder保证每隔一分钟刷新一次数据
     private Runnable timeRunnable=new Runnable() {
         @Override
         public void run() {
@@ -46,6 +44,10 @@ public class PedometerService extends Service {
         }
     };
 
+    public PedometerService(PedometerChartBean pedometerChartBean) {
+        this.pedometerChartBean = pedometerChartBean;
+    }
+
 
     @Override
     public void onCreate() {
@@ -59,6 +61,7 @@ public class PedometerService extends Service {
 
     }
 
+    //更新了计步器的图表数据
     private void updateChartData()
     {
         if(pedometerChartBean.getIndex()<1440-1)

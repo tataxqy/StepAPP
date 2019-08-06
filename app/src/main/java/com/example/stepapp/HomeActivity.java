@@ -1,7 +1,9 @@
 package com.example.stepapp;
 
 import android.content.ComponentName;
+import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.ServiceInfo;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -13,6 +15,9 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.Service.IPedometerService;
+import com.example.Service.PedometerService;
+import com.example.Utils.Utils;
+import com.example.beans.PedometerChartBean;
 import com.example.frame.BaseActivity;
 import com.example.frame.LogWriter;
 import com.example.widgets.CircleProgressBar;
@@ -39,6 +44,8 @@ public class HomeActivity extends BaseActivity {
     private static final int MESSAGE_UPDATE_CHART_DATA=2000;
 
     private static final int GET_DATA_TIME=200;
+    private PedometerChartBean chartBean;
+    private boolean bindService=false;
 
 
 
@@ -72,6 +79,35 @@ public class HomeActivity extends BaseActivity {
         btnStart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                try {
+                    status=remoteService.getServiceStatus();
+
+                } catch (RemoteException e) {
+                    LogWriter.d(e.toString());
+                }
+
+                if(status==STATUS_RUNNING&&remoteService!=null)
+                {
+                    try {
+                        remoteService.stopCount();
+                        btnStart.setText("启动");
+                        isRunning=false;
+                        isChartUpdate=false;
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+
+                }else if(status==STATUS_NOT_RUNNING&&remoteService!=null){
+                    try {
+                        remoteService.startCount();
+                        btnStart.setText("停止");
+                        isRunning=true;
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+
+
+                }
 
             }
         });
@@ -89,13 +125,36 @@ public class HomeActivity extends BaseActivity {
                     btnStart.setText("停止");
                     isChartUpdate=true;
                     isRunning=true;
-                    //启动两个线程
+                    //启动两个线程，定时获取数据，刷新UI
+                    new Thread(new StepRunnable()).start();
 
+                }
+                else{
+                    btnStart.setText("启动");
                 }
             } catch (RemoteException e) {
 
                 LogWriter.d(e.toString());
             }
+        }
+
+        protected  void onRequestData(){
+            //检查服务是否运行
+            //服务没有运行，启动服务，如果服务运行，直接绑定函数
+            Intent serviceIntent=new Intent(this,PedometerService.class);
+
+            if(!Utils.isServiceRunning(this, PedometerService.class.getName())){
+
+                startService(serviceIntent);
+
+
+            }else{//服务运行
+                serviceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            }
+            bindService=bindService(serviceIntent,serviceConnection,BIND_AUTO_CREATE);
+
+
         }
 
         @Override
@@ -121,7 +180,7 @@ public class HomeActivity extends BaseActivity {
                         handler.removeMessages(MESSAGE_UPDATE_STEP_COUNT);
                         //发送消息，让Handler去更新数据
                         handler.sendEmptyMessage(MESSAGE_UPDATE_STEP_COUNT);
-                        Thread.sleep(GET_DATA_TIME);
+                        Thread.sleep(GET_DATA_TIME);//间隔多少时间去更新
 
                     }
                 } catch (RemoteException e) {
@@ -134,6 +193,19 @@ public class HomeActivity extends BaseActivity {
         }
     }
 
+    private class ChartRunable implements Runnable{
+
+        @Override
+        public void run() {
+            while(isChartUpdate)
+            {
+
+
+            }
+        }
+    }
+
+
     Handler handler=new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -141,7 +213,8 @@ public class HomeActivity extends BaseActivity {
             {
                 case MESSAGE_UPDATE_STEP_COUNT:
                 {
-                    //更新
+                    //更新计步数据
+                    updateStepCount();
 
                 }
                 break;
@@ -153,6 +226,28 @@ public class HomeActivity extends BaseActivity {
 
         }
     };
+
+
+    public  void updateStepCount()
+    {
+        if(remoteService!=null){
+            int stepCountVal=0;
+            double calorieVal=0;
+            double distanceVal=0;
+            try{
+                stepCountVal=remoteService.getStepsCount();
+                calorieVal=remoteService.getCalorie();
+                distanceVal=remoteService.getDistance();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            stepCount.setText(String.valueOf(stepCountVal)+"步");
+            textCalorie.setText(Utils.getFormatVal(calorieVal)+"卡");
+            distance.setText(Utils.getFormatVal(distanceVal));
+            progressBar.setProgress(stepCountVal);
+
+        }
+    }
 
 
 }

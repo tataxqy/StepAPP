@@ -69,6 +69,7 @@ public class CircleProgressBar extends View {
     }
 
 
+    //paint
     private Paint pathPaint;
     private Paint fillPaint;
     //绘制的矩形区域

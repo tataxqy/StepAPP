@@ -8,7 +8,7 @@ import android.os.Parcelable;
  */
 public class PedometerChartBean implements Parcelable {
     private int[] arrayData;//1440是怎么定义出来的
-    private int index=0;
+    private int index=0;//数组存储在哪个位置
 
     public PedometerChartBean()
     {
@@ -61,7 +61,7 @@ public class PedometerChartBean implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
+    public void writeToParcel(Parcel dest, int flags) {//写入
         dest.writeIntArray(arrayData);
         dest.writeInt(index);
     }
